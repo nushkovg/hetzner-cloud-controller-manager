@@ -24,7 +24,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
-                  - key: node-role.kubernetes.io/master
+                  - key: node-role.kubernetes.io/control-plane
                     operator: Exists
       tolerations:
         # this taint is set by all kubelets running `--cloud-provider=external`
@@ -37,10 +37,12 @@ spec:
         # cloud controller manages should be able to run on masters
         - key: "node-role.kubernetes.io/master"
           effect: NoSchedule
+        - key: "node-role.kubernetes.io/control-plane"
+          effect: NoSchedule
         - key: "node.kubernetes.io/not-ready"
           effect: "NoSchedule"
       containers:
-        - image: ghcr.io/identw/hetzner-cloud-controller-manager:v0.0.8
+        - image: docker.codechem.com/base/hetzner-cloud-controller-manager:0.0.1
           name: hetzner-cloud-controller-manager
           command:
             - "/bin/hcloud-cloud-controller-manager"
@@ -87,84 +89,13 @@ metadata:
 ---
 
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: system:hetzner-cloud-controller-manager
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin
-subjects:
-  - kind: ServiceAccount
-    name: hetzner-cloud-controller-manager
-    namespace: kube-system
-
----
-
-# psp
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: hetzner-cloud-controller-manager
-spec:
-  hostIPC: false
-  hostPID: false
-  hostNetwork: false
-  privileged: false
-  readOnlyRootFilesystem: true
-  allowPrivilegeEscalation: false
-  runAsUser:
-    rule: MustRunAs
-    ranges:
-      - max: 40801
-        min: 40801
-  runAsGroup:
-    rule: MustRunAs
-    ranges:
-      - max: 40801
-        min: 40801
-  fsGroup:
-    rule: MustRunAs
-    ranges:
-      - max: 40801
-        min: 40801
-  seLinux:
-    rule: RunAsAny
-  supplementalGroups:
-    rule: MustRunAs
-    ranges:
-      - max: 40801
-        min: 40801
-  volumes:
-    - 'secret'
----
-
-# Cluster role for psp usage
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: hetzner-cloud-controller-manager
-rules:
-  - apiGroups:
-      - extensions
-      - policy
-    resourceNames:
-      - hetzner-cloud-controller-manager
-    resources:
-      - podsecuritypolicies
-    verbs:
-      - use
----
-
-# Cluster role Binding for psp
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: hetzner-cloud-controller-manager
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: hetzner-cloud-controller-manager
 subjects:
   - kind: ServiceAccount
     name: hetzner-cloud-controller-manager

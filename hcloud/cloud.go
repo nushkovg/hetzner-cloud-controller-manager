@@ -104,9 +104,10 @@ func readHrobotServers(hrobot hrobot.RobotClient) {
 			var hservers []HrobotServer
 			for _, s := range servers {
 				zone := strings.ToLower(strings.Split(s.Dc, "-")[0])
+				name := strings.ToLower(strings.ReplaceAll(s.ServerName, " ", "-"))
 				server := HrobotServer{
 					ID:     s.ServerNumber,
-					Name:   s.ServerName,
+					Name:   name,
 					Type:   s.Product,
 					Zone:   zone,
 					Region: strings.ToLower(s.Dc),

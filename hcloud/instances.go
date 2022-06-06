@@ -20,6 +20,7 @@ import (
 	"context"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/identw/hetzner-cloud-controller-manager/internal/hcops"
@@ -79,10 +80,11 @@ func (i *instances) InstanceID(ctx context.Context, nodeName types.NodeName) (st
 
 func (i *instances) InstanceType(ctx context.Context, nodeName types.NodeName) (string, error) {
 	server, err := getServerByName(ctx, i.client, string(nodeName))
+	name := strings.ToLower(strings.ReplaceAll(server.ServerType.Name, " ", "-"))
 	if err != nil {
 		return "", err
 	}
-	return server.ServerType.Name, nil
+	return name, nil
 }
 
 func (i *instances) InstanceTypeByProviderID(ctx context.Context, providerID string) (string, error) {
@@ -92,10 +94,11 @@ func (i *instances) InstanceTypeByProviderID(ctx context.Context, providerID str
 	}
 
 	server, err := getServerByID(ctx, i.client, id)
+	name := strings.ToLower(strings.ReplaceAll(server.ServerType.Name, " ", "-"))
 	if err != nil {
 		return "", err
 	}
-	return server.ServerType.Name, nil
+	return name, nil
 }
 
 func (i *instances) AddSSHKeyToAllInstances(ctx context.Context, user string, keyData []byte) error {
